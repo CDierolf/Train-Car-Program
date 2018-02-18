@@ -1,3 +1,10 @@
+
+// This program demonstrates the use of linked lists, adding nodes, deleting nodes, and finding nodes.
+// The head of the Train is the engine, and each node is a car connected to that train.
+// You may add cars, delete cars, or locate cars.
+// Christopher K. Dierolf
+// 2/17/2018
+
 #include <iostream>
 #include <string>
 
@@ -29,23 +36,30 @@ public:
 
 	int display_menu();
 	void handle_selection(int selection);
-	bool validate_selection(int n);
-	string add_train(string name, string contents, int num);
+	bool validate_selection(int n, int upper, int lower); //check if in range
+	string add_car(string name, string contents, int num);
 	bool remove_car(int);
 	int get_num_cars();
-	bool find_car(int num);
+	void find_car(int num);
 	void display_train();
 
-	
 };
 
 //Class Implementation
-//Constructor
+//Constructor - Create a train
 Train::Train()
 {
-	head == nullptr;
+
+	head = nullptr;
 	// Add the engine
-	add_train("R&R Railroad", "Engine", 0);
+	add_car("R&R Railroad", "TRAIN ENGINE", 0);
+	add_car("Eric Cartman", "Scott Tennerman's Famous Parent-Chili", 1);
+	add_car("Kyle Broflofski", "Human Centipads", 2);
+	add_car("Randy Marsh", "Lorde's Mustache", 3);
+	add_car("Sheila Broflofski", "Weird Political Stances", 4);
+	add_car("Ike Broflofski", "Canadian Survival Kit", 5);
+	add_car("Stan Marsh", "Emesis Bags for Meeting Wendy Testaburger", 6);
+
 
 }
 // Destructor
@@ -59,6 +73,7 @@ Train::~Train()
 		delete garbage;
 	}
 }
+
 // Display the menu and return the selection back to the calling method.
 int Train::display_menu()
 {
@@ -73,7 +88,7 @@ int Train::display_menu()
 	cout << "Option (1-4 or 0 to quit.): ";
 	cin >> selection;
 
-	return selection;	
+	return selection;
 }
 // Handle the selection from display_menu
 void Train::handle_selection(int selection)
@@ -103,17 +118,19 @@ void Train::handle_selection(int selection)
 				int number = 1;
 				cout << "Which space in the train should be car be? (1-50): ";
 				cin >> number;
-				cin.ignore();
+
 
 				// Validate the number
-				while (!validate_selection(number)) {
+				while (!validate_selection(number, 51, 0)) {
+					cin.clear();
+					cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 					cout << "Invalid Entry\n";
 					cout << "Which space in the train should the car be? (1-50): ";
 					cin >> number;
 					cin.ignore();
 				}
-				
 
+				cin.ignore();
 				cout << "What is the owner of the train car's name? : ";
 				getline(cin, name);
 
@@ -121,7 +138,7 @@ void Train::handle_selection(int selection)
 				getline(cin, contents);
 
 				// Add a new car to the train by creating a new node.
-				add_train(name, contents, number);
+				add_car(name, contents, number);
 				cout << "Car added at position " << number << " containing " << contents << endl;
 				// Add more cars.
 				cout << "\n\nDo you need to add another car? (Y/N): ";
@@ -135,7 +152,7 @@ void Train::handle_selection(int selection)
 			else
 			{
 				cout << "You cannot add anymore cars to this train.\n";
-				train_full == true;
+				train_full = true;
 			}
 
 		} while (add_more == 'Y' || add_more == 'y' && train_full == false);
@@ -155,29 +172,31 @@ void Train::handle_selection(int selection)
 		{
 			display_train();
 			cout << endl;
-			cout << "Select the car you would like to remove from the train: (1-" << num_cars << "): ";
+			cout << "Select the car you would like to remove from the train: (1-" << num_cars - 1 << "): ";
 			cin >> car_num;
 			while (car_num < 1)
 			{
-				cout << "You can't remove the engine from the train. Make another selection: (1-" << num_cars << "): ";
+				cout << "You can't remove the engine from the train. Make another selection: (1-" << num_cars - 1 << "): ";
 				cin >> car_num;
 			}
 			remove_car(car_num);
-		}	
+		}
 	}
 	else if (selection == 4)
 	{
 		int find_car_num;
+		int num_cars = get_num_cars();
 		char search_again;
 		do {
-		cout << "What is the car number you would like to search for and, if applicable, display the information of?: ";
-		cin >> find_car_num;
-
-			if (find_car(find_car_num) == false)
+			cout << "What is the car number you would like to search for and, if applicable, display the information of?: (1-" << num_cars - 1 << "): ";
+			cin >> find_car_num;
+			while (!validate_selection(find_car_num, num_cars, 0))
 			{
-
-
+				cout << "Invalid entry. The train has only " << num_cars - 1 << " cars.\n";
+				cout << "Enter a valid car number: 1-" << num_cars - 1 << ": ";
+				cin >> find_car_num;
 			}
+			find_car(find_car_num);
 			cout << "Would you like to search again? (Y/N): ";
 			cin >> search_again;
 		} while (search_again == 'Y' || search_again == 'y');
@@ -188,10 +207,10 @@ void Train::handle_selection(int selection)
 		exit(0);
 	}
 }
-//Validate the number selection from handle_selection
-bool Train::validate_selection(int n)
+//Validate numeric selections for range
+bool Train::validate_selection(int n, int upper, int lower)
 {
-	if (n > 0 && n < 51)
+	if (n > lower && n < upper)
 	{
 		return true;
 	}
@@ -200,10 +219,11 @@ bool Train::validate_selection(int n)
 		return false;
 	}
 }
+
 // Add a train car (node) in sorted order based on the car_number
-string Train::add_train(string name, string contents, int num)
+string Train::add_car(string name, string contents, int num)
 {
-	TrainNode *nodePtr, *previousNodePtr;
+	TrainNode *nodePtr = nullptr, *previousNodePtr = nullptr;
 
 	if (head == nullptr || head->car_number >= num)
 	{
@@ -222,7 +242,6 @@ string Train::add_train(string name, string contents, int num)
 		}
 		previousNodePtr->next = new TrainNode(name, contents, num, nodePtr);
 	}
-
 	return "Added!";
 }
 bool Train::remove_car(int number)
@@ -239,7 +258,7 @@ bool Train::remove_car(int number)
 	{
 		nodePtr = head;
 		head = head->next;	// Make the next node the head
-		delete nodePtr;		
+		delete nodePtr;
 		return true;
 	}
 	else
@@ -257,6 +276,7 @@ bool Train::remove_car(int number)
 			previousNodePtr->next = nodePtr->next;
 			delete nodePtr;
 		}
+		cout << "Car Removed!\n";
 		return true;
 	}
 }
@@ -266,43 +286,30 @@ int Train::get_num_cars()
 	TrainNode *nodePtr = head;
 	while (nodePtr != NULL)
 	{
-		++count;
+		count++;
 		nodePtr = nodePtr->next;
 	}
 
 	return count;
 }
 // Find a car, display it, and ask if they want to remove it.
-bool Train::find_car(int car_num)
+void Train::find_car(int car_num)
 {
 	TrainNode *nodePtr = head;
-
-	if (!head) // empty list
+	while (nodePtr)
 	{
-		cout << "Train doesn't exist.";
-		return false;
-	}
-	else
-	{
-		while (nodePtr != nullptr && nodePtr->car_number != car_num)
+		while (nodePtr->car_number != car_num)
 		{
 			nodePtr = nodePtr->next;
-			if (nodePtr->car_number == car_num)
-			{
-				cout << "Car found! Here is the information: \n";
-				cout << "Car number: " << nodePtr->car_number << endl;
-				cout << "Car owner: " << nodePtr->owner_name << endl;
-				cout << "Car contents: " << nodePtr->car_contents << endl;
-				return true;
-				
-			}
-			else
-			{
-				cout << "Car not found\n";
-				return false;
-			}
 		}
+		cout << "Car found! Here is the information: \n";
+		cout << "Car number: " << nodePtr->car_number << endl << "Car owner: " << nodePtr->owner_name << endl << "Car contents: " << nodePtr->car_contents << endl;
+		return;
 	}
+
+	cout << "Car not found.\n";
+
+
 }
 //Display a list of cars to the user
 void Train::display_train()
@@ -317,7 +324,6 @@ void Train::display_train()
 		nodePtr = nodePtr->next;
 	}
 }
-
 
 //Main
 
